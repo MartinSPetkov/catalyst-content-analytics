@@ -131,6 +131,7 @@ The ROI view is honest about what it is: a proxy chain, not attributed revenue. 
 - Supabase Pro tier (~$25/month) for connection pooling and more storage.
 - The scheduler needs to run in the cloud — a small VM or a managed cron service (~$10–20/month). The launchd approach only works on a machine that is always on.
 - LLM cost via API: tagging runs once per post (never re-tagged), so the ongoing cost per cycle is five recommendation calls plus any new hypothesis generation — roughly 10,000–15,000 tokens per client per week. At current Claude pricing that is well under $1 per client per month.
+- **Ordinal (LinkedIn + X data):** Pro plan at $265/month includes 4 social profiles. Each additional profile costs $20/month. For a Catalyst deployment covering 10 clients each with LinkedIn and X, that is 20 profiles — $265 + (16 × $20) = **$585/month** for Ordinal alone. This is the dominant cost line at scale and should be factored into client pricing. One Ordinal account can serve all clients from a single API key; profiles are the billing unit, not seats.
 
 **Where it breaks first:**
 1. **The scheduler is single-threaded.** Ten clients pulling simultaneously means ten sequential runs. At ~5 minutes per client, that is nearly an hour. The fix is to run connectors concurrently (asyncio or a thread pool per client).
