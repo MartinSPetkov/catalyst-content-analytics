@@ -1,5 +1,7 @@
 # Catalyst Content Analytics
 
+**[Live dashboard →](https://catalyst-content-analytics-demo.streamlit.app)**
+
 A self-sustaining content analytics system that pulls performance data from YouTube and LinkedIn, learns what is working, generates recommendations, and surfaces everything in a Streamlit dashboard. Runs on a weekly schedule with no manual trigger.
 
 ## What it does
