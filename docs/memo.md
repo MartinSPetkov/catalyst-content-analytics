@@ -135,3 +135,29 @@ The ROI view is honest about what it is: a proxy chain, not attributed revenue. 
 2. **The LLM subprocess blocks.** `claude -p` is synchronous. At scale, move to async API calls with proper rate-limit handling.
 3. **`attribute_scores` full recompute.** Fine at current scale. At tens of millions of snapshots, the GROUP BY aggregations become slow. The fix is incremental maintenance rather than full recompute each cycle.
 4. **No authentication on the dashboard.** The current Streamlit deployment is public. Multi-client use requires row-level access control — either Streamlit's built-in auth or deploying behind a gateway that scopes the `client_id` filter to the logged-in user.
+
+---
+
+## How AI was used to build this
+
+This system was built using Claude Code with a `CLAUDE.md` file that defined the architecture, constraints, and conventions before a single line was written. That file is in the repo root.
+
+**What Claude Code did:** scaffolded the module structure, wrote the connectors, migrations, scheduler, dashboard, and tests, and iterated on each as real errors surfaced during live runs against the APIs.
+
+**What required human judgment throughout:**
+
+- *Catching a broken CLI flag.* Claude initially called `claude -p` with `--output-format json`. That flag is not supported in `-p` mode — it silently returns empty stdout, causing the tagger to fail on every batch. The fix was to remove the flag and parse JSON from plain text output using `_strip_fences()`. Claude generated the broken call; human review of the actual terminal output caught it.
+
+- *The Ordinal field mapping.* The API documentation listed `emv` as the earned media value field. The live API returned `earnedMediaValue`. Claude wrote the connector against the docs; the field came back null in production. The fix (`item.get("emv") or item.get("earnedMediaValue")`) came from reading the raw API response, not from Claude.
+
+- *LinkedIn data access.* Claude initially proposed scraping LinkedIn. That was rejected immediately — terms of service violation, brittle, and wrong for a production system. The decision to use Ordinal as a licensed data partner was a human call after evaluating the actual options.
+
+- *Schema decisions.* Claude proposed platform-specific tables (`youtube_posts`, `linkedin_posts`). That was overruled in favour of a unified `posts` table with a `platform` column, for the reasons documented in the design decisions section. The `client_id` column for multi-tenancy was a human addition once the single-client architecture was working.
+
+- *Taxonomy mismatch.* The initial topic clusters were GTM-focused (`AI search`, `GTM strategy`, `demand gen`). The YouTube content is personal development and mindset coaching — a completely different domain. Claude used what it was given; catching the mismatch and extending the taxonomy required looking at the actual content.
+
+**Why prompts are embedded in the code, not stored in a separate folder:**
+
+A `prompts/` directory would create two sources of truth. The prompt sent to the LLM at runtime is constructed dynamically — it includes live data (attribute scores, top posts, active hypotheses) formatted into the prompt string at call time. Storing a static version separately would be immediately stale and would obscure the logic that shapes the actual input.
+
+Keeping prompts inline in `analytics/tagger.py`, `analytics/recommender.py`, and `shared/antislop.py` means the prompt, the data it receives, and the parsing of its output are all readable together. A future engineer can see exactly what the model is asked, what context it gets, and what happens to its response — without jumping between files. The prompt is part of the code, not documentation of it.

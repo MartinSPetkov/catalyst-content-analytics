@@ -9,4 +9,3 @@ outputs/
 .DS_Store
 client_secret.json
 .claude/
-CLAUDE.md
