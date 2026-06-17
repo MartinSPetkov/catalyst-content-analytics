@@ -125,10 +125,12 @@ The ROI view is honest about what it is: a proxy chain, not attributed revenue. 
 
 **Current cost: near zero.** LLM calls go through `claude -p` using subscription auth. No API fees, no per-token billing. Supabase free tier handles the current data volume. The scheduler runs on a local machine via launchd.
 
+**A note on the LLM integration.** The `claude -p` subprocess approach was chosen for this demo because it uses subscription auth and costs nothing to run. It is not the production path. All LLM calls are isolated behind `shared/llm.py` — the rest of the codebase never calls the model directly and has no knowledge of how it is invoked. Switching to the Anthropic API means changing one function in that file: replace the `subprocess.run` call with an `anthropic.Anthropic().messages.create()` call, set the model constant, and add `ANTHROPIC_API_KEY` to the environment. Nothing else in the system changes. At production scale, the API path is strictly better: it is async-capable, supports streaming, has proper rate-limit headers, and removes the dependency on a locally installed CLI.
+
 **At 10 clients:**
 - Supabase Pro tier (~$25/month) for connection pooling and more storage.
 - The scheduler needs to run in the cloud — a small VM or a managed cron service (~$10–20/month). The launchd approach only works on a machine that is always on.
-- LLM cost remains zero if the claude subscription covers it; switches to API billing if moved to a server environment without subscription access.
+- LLM cost via API: tagging runs once per post (never re-tagged), so the ongoing cost per cycle is five recommendation calls plus any new hypothesis generation — roughly 10,000–15,000 tokens per client per week. At current Claude pricing that is well under $1 per client per month.
 
 **Where it breaks first:**
 1. **The scheduler is single-threaded.** Ten clients pulling simultaneously means ten sequential runs. At ~5 minutes per client, that is nearly an hour. The fix is to run connectors concurrently (asyncio or a thread pool per client).
