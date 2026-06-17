@@ -1,0 +1,13 @@
+streamlit
+psycopg2-binary
+sqlalchemy
+alembic
+apscheduler
+google-api-python-client
+google-auth-oauthlib
+feedparser
+beautifulsoup4
+requests
+pandas
+python-dotenv
+pytest
