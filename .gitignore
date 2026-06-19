@@ -9,3 +9,4 @@ outputs/
 .DS_Store
 client_secret.json
 .claude/
+docs/walkthrough-prep.md

@@ -68,6 +68,7 @@ cp .env.example .env
 | `YOUTUBE_CLIENT_SECRET` | OAuth 2.0 client secret |
 | `YOUTUBE_REFRESH_TOKEN` | Long-lived refresh token (see below) |
 | `ORDINAL_API_KEY` | API key from tryordinal.com → Settings → API |
+| `ORDINAL_PROFILE_CLIENTS` | JSON object mapping Ordinal profile display names to `client_id` slugs, e.g. `{"Martin Petkov": "martin-petkov", "Will Leatherman": "will-leatherman"}`. Profiles not listed fall back to `CLIENT_ID`. |
 
 **Never commit `.env`.** It is in `.gitignore`.
 

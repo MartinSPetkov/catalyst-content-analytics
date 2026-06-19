@@ -16,6 +16,26 @@ _PLATFORM_MAP = {
 }
 
 
+def _resolve_client_id(profile_name: str, default: str) -> str:
+    """
+    Map an Ordinal profile display name to a client_id slug.
+
+    Set ORDINAL_PROFILE_CLIENTS in .env as a JSON object:
+        ORDINAL_PROFILE_CLIENTS={"Martin Petkov": "martin-petkov", "Will Leatherman": "will-leatherman"}
+
+    Profiles not listed fall back to the default CLIENT_ID.
+    """
+    raw = os.environ.get("ORDINAL_PROFILE_CLIENTS", "")
+    if not raw:
+        return default
+    try:
+        mapping = json.loads(raw)
+        return mapping.get(profile_name, default)
+    except json.JSONDecodeError:
+        print(f"[Ordinal] Warning: ORDINAL_PROFILE_CLIENTS is not valid JSON, ignoring.")
+        return default
+
+
 def pull(db_conn=None) -> dict:
     api_key = os.environ.get("ORDINAL_API_KEY")
     account_id = os.environ.get("CLIENT_ID", "default")
@@ -52,10 +72,11 @@ def pull(db_conn=None) -> dict:
 
             profile_id = profile["id"]
             profile_name = profile.get("name", profile_id)
-            print(f"[Ordinal] Pulling {channel} posts for {profile_name}...")
+            client_id = _resolve_client_id(profile_name, account_id)
+            print(f"[Ordinal] Pulling {channel} posts for {profile_name} (client: {client_id})...")
 
             posts, snapshots = _pull_platform(
-                session, cur, account_id, platform, profile_id, start_date, end_date
+                session, cur, client_id, platform, profile_id, start_date, end_date
             )
             total_posts_added += posts
             total_snapshots_added += snapshots
